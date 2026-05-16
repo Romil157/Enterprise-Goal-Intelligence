@@ -3,9 +3,9 @@ import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { applyTokenToSession } from "@/src/lib/security/claims";
 
 const microsoftEntraProvider = MicrosoftEntraID({
-  clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
-  clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
-  issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER,
+  clientId: process.env.AZURE_CLIENT_ID,
+  clientSecret: process.env.AZURE_CLIENT_SECRET,
+  issuer: `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/v2.0`,
   authorization: {
     params: {
       scope: [
