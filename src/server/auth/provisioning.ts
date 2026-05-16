@@ -113,6 +113,22 @@ async function ensureOrganization(input: {
   tenantId: string;
   email: string;
 }): Promise<{ id: string }> {
+  // DEMO MODE: Force all users into the Acme Global Enterprise demo organization
+  const demoOrg = await prisma.organization.findFirst({
+    where: { slug: 'acme-global' },
+    select: { id: true, entraTenantId: true }
+  });
+  
+  if (demoOrg) {
+    if (!demoOrg.entraTenantId && input.tenantId) {
+      await prisma.organization.update({
+        where: { id: demoOrg.id },
+        data: { entraTenantId: input.tenantId }
+      });
+    }
+    return { id: demoOrg.id };
+  }
+
   const domain = input.email.split("@")[1] ?? "local.atomquest";
   const tenantOrganization = await prisma.organization.findUnique({
     where: { entraTenantId: input.tenantId },
@@ -240,12 +256,8 @@ export async function provisionEnterpriseUser(input: {
     (input.user?.id ? await prisma.user.findUnique({ where: { id: input.user.id } }) : null);
 
   const graphSignals = await resolveGraphSignals(input.profile, input.account?.access_token);
-  const role = resolveEnterpriseRole({
-    groupIds: graphSignals.groupIds,
-    groupDataAvailable: graphSignals.groupDataAvailable,
-    hasDirectReports: graphSignals.hasDirectReports,
-    existingRole: existingUser?.role
-  });
+  // DEMO MODE: Force all users to be ADMIN so they can view the executive analytics dashboard
+  const role: EnterpriseRole = "ADMIN";
 
   const profileRecord = input.profile as Record<string, unknown> | undefined;
   const userData: Prisma.UserUncheckedUpdateInput = {
