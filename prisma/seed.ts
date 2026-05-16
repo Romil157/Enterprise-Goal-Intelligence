@@ -1,3 +1,19 @@
+import * as fs from 'fs';
+import * as path from 'path';
+const envPath = path.resolve(process.cwd(), '.env');
+if (fs.existsSync(envPath)) {
+  const envContent = fs.readFileSync(envPath, 'utf-8');
+  for (const line of envContent.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx === -1) continue;
+    const key = trimmed.slice(0, eqIdx).trim();
+    let val = trimmed.slice(eqIdx + 1).trim();
+    if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) val = val.slice(1, -1);
+    if (!process.env[key]) process.env[key] = val;
+  }
+}
 import { PrismaClient, TeamMembershipRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -128,8 +144,7 @@ async function main() {
     const plan = await prisma.goalPlan.create({
       data: {
         organizationId: org.id, ownerId: owner.id, cycleId: cycle.id,
-        status: 'APPROVED', submittedAt: new Date('2026-04-15'), approvedAt: new Date('2026-04-20'),
-        approvedById: admin.id, totalWeight: goals.reduce((s, g) => s + g.weightage, 0),
+        status: 'DRAFT', totalWeight: goals.reduce((s, g) => s + g.weightage, 0),
       },
     });
     for (const g of goals) {
@@ -143,6 +158,11 @@ async function main() {
         },
       });
     }
+    // Now update to APPROVED after goals exist
+    await prisma.goalPlan.update({
+      where: { id: plan.id },
+      data: { status: 'APPROVED', submittedAt: new Date('2026-04-15'), approvedAt: new Date('2026-04-20'), approvedById: admin.id },
+    });
     return plan;
   }
 
