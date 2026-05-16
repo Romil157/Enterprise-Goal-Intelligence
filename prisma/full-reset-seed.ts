@@ -22,13 +22,11 @@ async function main() {
   console.log('[Full Reset Seed] Starting...');
 
   // ── STEP 1: Fix org and find all users ──────────────────────────────────────
-  const org = await prisma.organization.findFirst({ where: { slug: 'acme-global' } });
-  if (!org) { console.error('No org. Run seed.ts first.'); process.exit(1); }
+  const org = await prisma.organization.findFirstOrThrow({ where: { slug: 'acme-global' } });
 
-  const cycle = await prisma.performanceCycle.findFirst({
+  const cycle = await prisma.performanceCycle.findFirstOrThrow({
     where: { organizationId: org.id, status: 'ACTIVE' }
   });
-  if (!cycle) { console.error('No active cycle.'); process.exit(1); }
 
   // Fix all users to ACTIVE status
   await prisma.user.updateMany({
@@ -38,21 +36,14 @@ async function main() {
   console.log('[Step 1] All users set to ACTIVE');
 
   // Reload users
-  const admin   = await prisma.user.findFirst({ where: { organizationId: org.id, role: 'ADMIN' } });
-  const mgrEng  = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'mgr.eng@acme.corp' } });
-  const mgrSales= await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'mgr.sales@acme.corp' } });
-  const emp1    = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'dev1@acme.corp' } });
-  const emp2    = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'dev2@acme.corp' } });
-  const emp3    = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'sales1@acme.corp' } });
-  const emp4    = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'ops1@acme.corp' } });
-  const emp5    = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'sales2@acme.corp' } });
-
-  if (!admin || !mgrEng || !mgrSales || !emp1 || !emp2 || !emp3 || !emp4 || !emp5) {
-    console.error('Missing users. Existing users:', 
-      (await prisma.user.findMany({ where: { organizationId: org.id }, select: { emailNormalized: true } }))
-        .map(u => u.emailNormalized).join(', '));
-    process.exit(1);
-  }
+  const admin    = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, role: 'ADMIN' } });
+  const mgrEng   = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'mgr.eng@acme.corp' } });
+  const mgrSales = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'mgr.sales@acme.corp' } });
+  const emp1     = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'dev1@acme.corp' } });
+  const emp2     = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'dev2@acme.corp' } });
+  const emp3     = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'sales1@acme.corp' } });
+  const emp4     = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'ops1@acme.corp' } });
+  const emp5     = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'sales2@acme.corp' } });
   console.log('[Step 1] Users loaded:', [admin,mgrEng,mgrSales,emp1,emp2,emp3,emp4,emp5].map(u=>u.emailNormalized).join(', '));
 
   // ── STEP 2: Check existing data state ──────────────────────────────────────
@@ -61,15 +52,12 @@ async function main() {
   console.log(`[Step 2] Existing goals: ${existingGoals}, plans: ${existingPlans} — will add idempotently`);
 
   // Find governance windows
-  const q1Window = await prisma.governanceWindow.findFirst({
+  const q1Window = await prisma.governanceWindow.findFirstOrThrow({
     where: { organizationId: org.id, cycleId: cycle.id, type: 'CHECK_IN', quarter: 'Q1' }
   });
-  const goalWindow = await prisma.governanceWindow.findFirst({
+  const goalWindow = await prisma.governanceWindow.findFirstOrThrow({
     where: { organizationId: org.id, cycleId: cycle.id, type: 'GOAL_SETTING' }
   });
-  if (!q1Window || !goalWindow) {
-    console.error('Missing governance windows'); process.exit(1);
-  }
 
   // ── STEP 3: Helper to create approved plans ──────────────────────────────────
   async function createPlan(

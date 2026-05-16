@@ -18,8 +18,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const org = await prisma.organization.findFirst({ where: { slug: 'acme-global' } });
-  if (!org) { console.log('No org!'); process.exit(1); }
+  const org = await prisma.organization.findFirstOrThrow({ where: { slug: 'acme-global' } });
   
   const [goals, checkIns, plans, approvals, escalations, activity, cycle, users] = await Promise.all([
     prisma.goal.count({ where: { organizationId: org.id } }),

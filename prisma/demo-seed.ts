@@ -26,33 +26,27 @@ async function main() {
   console.log('[Demo Seed] Populating enterprise demo data...');
 
   // Find the org created by the original seed
-  const org = await prisma.organization.findFirst({ where: { slug: 'acme-global' } });
-  if (!org) { console.error('No org found. Run db:seed first.'); process.exit(1); }
+  const org = await prisma.organization.findFirstOrThrow({ where: { slug: 'acme-global' } });
 
-  const cycle = await prisma.performanceCycle.findFirst({ where: { organizationId: org.id, status: 'ACTIVE' } });
-  if (!cycle) { console.error('No active cycle found.'); process.exit(1); }
+  const cycle = await prisma.performanceCycle.findFirstOrThrow({ where: { organizationId: org.id, status: 'ACTIVE' } });
 
   // Get governance windows
-  const q1Window = await prisma.governanceWindow.findFirst({
+  const q1Window = await prisma.governanceWindow.findFirstOrThrow({
     where: { organizationId: org.id, cycleId: cycle.id, type: 'CHECK_IN', quarter: 'Q1' }
   });
-  const goalSettingWindow = await prisma.governanceWindow.findFirst({
+  const goalSettingWindow = await prisma.governanceWindow.findFirstOrThrow({
     where: { organizationId: org.id, cycleId: cycle.id, type: 'GOAL_SETTING' }
   });
 
   // Get users
-  const admin = await prisma.user.findFirst({ where: { organizationId: org.id, role: 'ADMIN' } });
-  const mgrEng = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'mgr.eng@acme.corp' } });
-  const mgrSales = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'mgr.sales@acme.corp' } });
-  const emp1 = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'dev1@acme.corp' } });
-  const emp2 = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'dev2@acme.corp' } });
-  const emp3 = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'sales1@acme.corp' } });
-  const emp4 = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'ops1@acme.corp' } });
-  const emp5 = await prisma.user.findFirst({ where: { organizationId: org.id, emailNormalized: 'sales2@acme.corp' } });
-
-  if (!admin || !mgrEng || !mgrSales || !emp1 || !emp2 || !emp3 || !emp4 || !emp5 || !q1Window || !goalSettingWindow) {
-    console.error('Missing required entities. Run db:seed first.'); process.exit(1);
-  }
+  const admin = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, role: 'ADMIN' } });
+  const mgrEng = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'mgr.eng@acme.corp' } });
+  const mgrSales = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'mgr.sales@acme.corp' } });
+  const emp1 = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'dev1@acme.corp' } });
+  const emp2 = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'dev2@acme.corp' } });
+  const emp3 = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'sales1@acme.corp' } });
+  const emp4 = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'ops1@acme.corp' } });
+  const emp5 = await prisma.user.findFirstOrThrow({ where: { organizationId: org.id, emailNormalized: 'sales2@acme.corp' } });
 
   // ============================================================
   // PHASE 1: Create the 5 required employee demo goals
