@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { Activity, AlertTriangle, DatabaseZap, GitBranch, Network, ShieldCheck, Signal } from "lucide-react";
+import { Activity, AlertTriangle, DatabaseZap, GitBranch, LogOut, Network, ShieldCheck, Signal } from "lucide-react";
+import { signOut } from "next-auth/react";
 import { Badge } from "@/src/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/components/ui/card";
 import { MetricCard } from "./metric-card";
@@ -63,6 +64,13 @@ export function ExecutiveDashboard({ data }: { data: AnalyticsDashboardData }) {
             {freshnessLabel(data)}
           </Badge>
           <DashboardRefreshController />
+          <button
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 hover:text-red-600 hover:border-red-200"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Sign out
+          </button>
         </div>
       </section>
 
