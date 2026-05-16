@@ -21,6 +21,12 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('[Seed] Starting ATOMQUEST Enterprise Seed...');
 
+  const existingOrg = await prisma.organization.findFirst({ where: { slug: 'acme-global' } });
+  if (existingOrg) {
+    console.log('[Seed] Acme Global already exists. Skipping base seed.');
+    return;
+  }
+
   // --- Organization ---
   const org = await prisma.organization.create({
     data: { name: 'Acme Global Enterprise', slug: 'acme-global', status: 'ACTIVE' },

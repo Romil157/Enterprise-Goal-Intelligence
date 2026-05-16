@@ -5,7 +5,7 @@
   "description": "Enterprise-grade organizational alignment powered by intelligent performance engineering.",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx prisma db push --accept-data-loss && npx tsx prisma/seed.ts && npx tsx prisma/full-reset-seed.ts && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
