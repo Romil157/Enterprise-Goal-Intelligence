@@ -259,7 +259,9 @@ async function main() {
       data: {
         organizationId: org.id, goalPlanId: emp4Plan.id,
         approverId: mgrEng.id, requesterId: emp4.id, subjectUserId: emp4.id,
-        status: 'PENDING', dueAt: new Date(now.getTime() - 8*86400000), // overdue
+        status: 'PENDING', 
+        requestedAt: new Date(now.getTime() - 10*86400000), // explicitly set requestedAt
+        dueAt: new Date(now.getTime() - 8*86400000), // overdue
         governanceWindowId: goalWindow.id,
       }
     });
