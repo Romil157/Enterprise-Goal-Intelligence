@@ -202,7 +202,7 @@ async function main() {
       data: {
         organizationId: org.id, level: 'MANAGER', status: 'OPEN',
         reason: 'Target deviation exceeds acceptable threshold. Escalating for governance review.',
-        subjectUserId: emp1.id, assigneeId: mgrEng.id,
+        subjectUserId: emp1.id, assignedToUserId: mgrEng.id,
         governanceWindowId: q1Window.id,
         dueAt: new Date(Date.now() + 3 * 86400000),
       }
@@ -216,7 +216,7 @@ async function main() {
       data: {
         organizationId: org.id, level: 'HR', status: 'OPEN',
         reason: 'Goal plan approval overdue by 18 days. Escalated to HR for intervention.',
-        subjectUserId: emp4.id, assigneeId: admin.id,
+        subjectUserId: emp4.id, assignedToUserId: admin.id,
         goalPlanId: kenjiPlan.id, governanceWindowId: q1Window.id,
         dueAt: new Date(Date.now() - 5 * 86400000),
       }
@@ -331,7 +331,7 @@ async function main() {
         organizationId: org.id, goalPlanId: plan.id,
         approverId: admin.id, requesterId: plan.ownerId, subjectUserId: plan.ownerId,
         status: 'APPROVED', decision: 'APPROVE',
-        requestedAt, decidedAt, decisionComment: 'Approved. Goals align with organizational priorities.',
+        requestedAt, decidedAt, comment: 'Approved. Goals align with organizational priorities.',
         governanceWindowId: goalSettingWindow.id,
       }
     });
