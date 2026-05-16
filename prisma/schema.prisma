@@ -1,0 +1,1048 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+
+enum UserRole {
+  EMPLOYEE
+  MANAGER_L1
+  ADMIN
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum TeamType {
+  COMPANY
+  DEPARTMENT
+  FUNCTION
+  SQUAD
+  PROJECT
+}
+
+enum TeamMembershipRole {
+  MEMBER
+  LEAD
+  MANAGER
+  EXECUTIVE
+}
+
+enum CycleStatus {
+  DRAFT
+  ACTIVE
+  LOCKED
+  ARCHIVED
+}
+
+enum GovernanceWindowType {
+  GOAL_SETTING
+  CHECK_IN
+}
+
+enum GovernanceWindowStatus {
+  UPCOMING
+  OPEN
+  LOCKED
+  CLOSED
+}
+
+enum Quarter {
+  NONE
+  Q1
+  Q2
+  Q3
+  Q4
+}
+
+enum GoalPlanStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  ACTIVE
+  REWORK_REQUESTED
+  LOCKED
+  ARCHIVED
+}
+
+enum GoalStatus {
+  DRAFT
+  ACTIVE
+  AT_RISK
+  COMPLETED
+  CANCELLED
+  LOCKED
+  ARCHIVED
+}
+
+enum GoalPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum GoalSource {
+  MANUAL
+  SHARED_KPI
+  IMPORTED
+  SYSTEM
+}
+
+enum GoalVisibility {
+  PRIVATE
+  MANAGER
+  TEAM
+  ORGANIZATION
+}
+
+enum GoalKpiRole {
+  LOCAL
+  MASTER
+  REPLICA
+}
+
+enum UomType {
+  NUMBER
+  PERCENTAGE
+  CURRENCY
+  DAYS
+  HOURS
+  BOOLEAN
+  COUNT
+  RATIO
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REWORK_REQUESTED
+  REJECTED
+  CANCELLED
+  EXPIRED
+}
+
+enum ApprovalDecision {
+  APPROVE
+  REQUEST_REWORK
+  REJECT
+  CANCEL
+}
+
+enum ScoringMethod {
+  NUMERIC_MIN
+  NUMERIC_MAX
+  PERCENTAGE_MIN
+  PERCENTAGE_MAX
+  TIMELINE
+  ZERO_BASED
+}
+
+enum CheckInStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REWORK_REQUESTED
+  LOCKED
+}
+
+enum ProgressStatus {
+  NOT_STARTED
+  ON_TRACK
+  AT_RISK
+  OFF_TRACK
+  COMPLETED
+  BLOCKED
+}
+
+enum NotificationType {
+  GOAL_DUE
+  CHECK_IN_DUE
+  APPROVAL_REQUEST
+  APPROVAL_DECISION
+  ESCALATION
+  KPI_SYNC
+  COMMENT
+  TEAMS_ADAPTIVE_CARD
+  WORKFLOW_ACTION
+  SYSTEM
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum EscalationLevel {
+  MANAGER
+  HR
+  ADMIN
+}
+
+enum EscalationStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+  CANCELLED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOCKED_UPDATE
+  SUBMIT
+  APPROVE
+  REJECT
+  REQUEST_REWORK
+  SYNC
+  ESCALATE
+  SYSTEM
+}
+
+enum ActivityType {
+  GOAL_CREATED
+  GOAL_UPDATED
+  GOAL_SUBMITTED
+  GOAL_APPROVED
+  GOAL_REJECTED
+  GOAL_REWORK_REQUESTED
+  GOAL_LOCKED
+  CHECK_IN_SUBMITTED
+  CHECK_IN_APPROVED
+  CHECK_IN_REWORK_REQUESTED
+  CHECK_IN_LOCKED
+  APPROVAL_REQUESTED
+  APPROVAL_DECIDED
+  APPROVAL_APPROVED
+  APPROVAL_REJECTED
+  APPROVAL_REWORK_REQUESTED
+  KPI_SYNCED
+  ESCALATION_CREATED
+  ESCALATION_UPDATED
+  ESCALATION_RESOLVED
+  COMMENT_ADDED
+  NOTIFICATION_SENT
+  HIERARCHY_CHANGED
+  TEAM_UPDATED
+  TEAMS_CARD_SENT
+  TEAMS_ACTION_RECEIVED
+  GOVERNANCE_OVERRIDE
+}
+
+enum KpiStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum KpiSyncStatus {
+  PENDING
+  SYNCED
+  SKIPPED
+  FAILED
+}
+
+model Organization {
+  id            String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String             @db.VarChar(160)
+  slug          String             @unique(map: "organizations_slug_key") @db.VarChar(80)
+  status        OrganizationStatus @default(ACTIVE)
+  primaryDomain String?            @map("primary_domain") @db.VarChar(255)
+  entraTenantId String?            @unique(map: "organizations_entra_tenant_id_key") @map("entra_tenant_id") @db.VarChar(128)
+  settings      Json               @default("{}")
+  metadata      Json               @default("{}")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version       Int                @default(1)
+
+  activityFeed      ActivityFeed[]
+  auditLogs         AuditLog[]
+  analyticsDailySnapshots   AnalyticsDailySnapshot[]
+  analyticsQuarterSnapshots AnalyticsQuarterSnapshot[]
+  checkIns          CheckIn[]
+  escalationLogs    EscalationLog[]
+  goalApprovals     GoalApproval[]
+  goalComments      GoalComment[]
+  goalPlans         GoalPlan[]
+  goals             Goal[]
+  governanceWindows GovernanceWindow[]
+  kpiAssignments    KpiAssignment[]
+  kpiDefinitions    KpiDefinition[]
+  kpiSyncLogs       KpiSyncLog[]
+  notifications     Notification[]
+  performanceCycles PerformanceCycle[]
+  teamMemberships   TeamMembership[]
+  teams             Team[]
+  users             User[]
+
+  @@index([status], map: "organizations_status_idx")
+  @@map("organizations")
+}
+
+model User {
+  id              String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String     @map("organization_id") @db.Uuid
+  managerId       String?    @map("manager_id") @db.Uuid
+  teamId          String?    @map("team_id") @db.Uuid
+  email           String     @db.VarChar(320)
+  emailNormalized String     @map("email_normalized") @db.VarChar(320)
+  emailVerified   DateTime?  @map("email_verified") @db.Timestamptz(6)
+  name            String?    @db.VarChar(160)
+  displayName     String     @map("display_name") @db.VarChar(160)
+  avatarUrl       String?    @map("avatar_url") @db.Text
+  employeeCode    String?    @map("employee_code") @db.VarChar(64)
+  entraObjectId   String?    @map("entra_object_id") @db.VarChar(128)
+  role            UserRole   @default(EMPLOYEE)
+  status          UserStatus @default(INVITED)
+  designation     String?    @db.VarChar(160)
+  department      String?    @db.VarChar(160)
+  isActive        Boolean    @default(true) @map("is_active")
+  timezone        String     @default("UTC") @db.VarChar(64)
+  locale          String     @default("en-US") @db.VarChar(32)
+  lastLoginAt     DateTime?  @map("last_login_at") @db.Timestamptz(6)
+  deletedAt       DateTime?  @map("deleted_at") @db.Timestamptz(6)
+  metadata        Json       @default("{}")
+  createdAt       DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version         Int        @default(1)
+
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  manager            User?            @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports      User[]           @relation("UserManager")
+  team               Team?            @relation("UserTeam", fields: [teamId], references: [id], onDelete: SetNull)
+  accounts           Account[]
+  activities         ActivityFeed[]
+  assignedKpis       KpiAssignment[]  @relation("KpiAssignmentAssignee")
+  auditLogs          AuditLog[]
+  analyticsQuarterSnapshots AnalyticsQuarterSnapshot[]
+  comments           GoalComment[]
+  authenticators     Authenticator[]
+  checkInsReviewed   CheckIn[]        @relation("CheckInReviewer")
+  checkInsSubmitted  CheckIn[]        @relation("CheckInSubmitter")
+  escalationAssignee EscalationLog[]  @relation("EscalationAssignee")
+  escalationSubjects EscalationLog[]  @relation("EscalationSubject")
+  goalPlans          GoalPlan[]       @relation("GoalPlanOwner")
+  goalPlansApproved  GoalPlan[]       @relation("GoalPlanApprover")
+  goalPlansSubmitted GoalPlan[]       @relation("GoalPlanSubmitter")
+  goalsApproved      Goal[]           @relation("GoalApprover")
+  goalsCreated       Goal[]           @relation("GoalCreator")
+  goalsOwned         Goal[]           @relation("GoalOwner")
+  goalsUpdated       Goal[]           @relation("GoalUpdater")
+  kpiAssignmentsMade KpiAssignment[]  @relation("KpiAssignmentCreator")
+  kpisOwned          KpiDefinition[]  @relation("KpiDefinitionOwner")
+  notifications      Notification[]
+  approvalApprover   GoalApproval[]   @relation("GoalApprovalApprover")
+  approvalDecider    GoalApproval[]   @relation("GoalApprovalDecider")
+  approvalRequester  GoalApproval[]   @relation("GoalApprovalRequester")
+  approvalSubject    GoalApproval[]   @relation("GoalApprovalSubject")
+  sessions           Session[]
+  teamMemberships    TeamMembership[]
+  managedTeams       Team[]           @relation("TeamManager")
+
+  @@unique([organizationId, emailNormalized], map: "users_org_email_normalized_key")
+  @@unique([organizationId, employeeCode], map: "users_org_employee_code_key")
+  @@unique([organizationId, entraObjectId], map: "users_org_entra_object_id_key")
+  @@index([organizationId, managerId, isActive], map: "users_org_manager_active_idx")
+  @@index([organizationId, teamId, isActive], map: "users_org_team_active_idx")
+  @@index([organizationId, role, status], map: "users_org_role_status_idx")
+  @@index([organizationId, deletedAt], map: "users_org_deleted_at_idx")
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String  @map("user_id") @db.Uuid
+  type              String  @db.VarChar(64)
+  provider          String  @db.VarChar(64)
+  providerAccountId String  @map("provider_account_id") @db.VarChar(191)
+  refreshToken      String? @map("refresh_token") @db.Text
+  accessToken       String? @map("access_token") @db.Text
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type") @db.VarChar(64)
+  scope             String? @db.Text
+  idToken           String? @map("id_token") @db.Text
+  sessionState      String? @map("session_state") @db.VarChar(255)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId], map: "accounts_provider_provider_account_id_key")
+  @@index([userId], map: "accounts_user_id_idx")
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionToken String   @unique(map: "sessions_session_token_key") @map("session_token") @db.VarChar(255)
+  userId       String   @map("user_id") @db.Uuid
+  expires      DateTime @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "sessions_user_id_idx")
+  @@index([expires], map: "sessions_expires_idx")
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String   @db.VarChar(255)
+  token      String   @unique(map: "verification_tokens_token_key") @db.VarChar(255)
+  expires    DateTime @db.Timestamptz(6)
+
+  @@unique([identifier, token], map: "verification_tokens_identifier_token_key")
+  @@map("verification_tokens")
+}
+
+model Authenticator {
+  credentialId         String  @unique(map: "authenticators_credential_id_key") @map("credential_id") @db.VarChar(255)
+  userId               String  @map("user_id") @db.Uuid
+  providerAccountId    String  @map("provider_account_id") @db.VarChar(191)
+  credentialPublicKey  String  @map("credential_public_key") @db.Text
+  counter              Int
+  credentialDeviceType String  @map("credential_device_type") @db.VarChar(64)
+  credentialBackedUp   Boolean @map("credential_backed_up")
+  transports           String? @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialId])
+  @@map("authenticators")
+}
+
+model Team {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String   @map("organization_id") @db.Uuid
+  parentTeamId   String?  @map("parent_team_id") @db.Uuid
+  managerId      String?  @map("manager_id") @db.Uuid
+  name           String   @db.VarChar(160)
+  slug           String   @db.VarChar(100)
+  departmentCode String   @map("department_code") @db.VarChar(64)
+  type           TeamType @default(DEPARTMENT)
+  description    String?  @db.Text
+  path           String   @default("/") @db.Text
+  depth          Int      @default(0)
+  isActive       Boolean  @default(true) @map("is_active")
+  metadata       Json     @default("{}")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int      @default(1)
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  parentTeam      Team?            @relation("TeamHierarchy", fields: [parentTeamId], references: [id], onDelete: SetNull)
+  childTeams      Team[]           @relation("TeamHierarchy")
+  manager         User?            @relation("TeamManager", fields: [managerId], references: [id], onDelete: SetNull)
+  activityFeed    ActivityFeed[]
+  analyticsDailySnapshots   AnalyticsDailySnapshot[]
+  analyticsQuarterSnapshots AnalyticsQuarterSnapshot[]
+  goalPlans       GoalPlan[]
+  goals           Goal[]
+  kpiAssignments  KpiAssignment[]  @relation("KpiAssignmentTeam")
+  kpiDefinitions  KpiDefinition[]
+  members         User[]           @relation("UserTeam")
+  teamMemberships TeamMembership[]
+
+  @@unique([organizationId, slug], map: "teams_org_slug_key")
+  @@unique([organizationId, departmentCode], map: "teams_org_department_code_key")
+  @@index([organizationId, parentTeamId, isActive], map: "teams_org_parent_active_idx")
+  @@index([organizationId, managerId, isActive], map: "teams_org_manager_active_idx")
+  @@index([organizationId, departmentCode, isActive], map: "teams_org_department_code_active_idx")
+  @@index([organizationId, type, isActive], map: "teams_org_type_active_idx")
+  @@map("teams")
+}
+
+model TeamMembership {
+  id             String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String             @map("organization_id") @db.Uuid
+  teamId         String             @map("team_id") @db.Uuid
+  userId         String             @map("user_id") @db.Uuid
+  role           TeamMembershipRole @default(MEMBER)
+  startsAt       DateTime           @default(now()) @map("starts_at") @db.Timestamptz(6)
+  endsAt         DateTime?          @map("ends_at") @db.Timestamptz(6)
+  isPrimary      Boolean            @default(false) @map("is_primary")
+  createdAt      DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  team         Team         @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, teamId, endsAt], map: "team_memberships_org_team_ends_at_idx")
+  @@index([organizationId, userId, endsAt], map: "team_memberships_org_user_ends_at_idx")
+  @@map("team_memberships")
+}
+
+model PerformanceCycle {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String      @map("organization_id") @db.Uuid
+  fiscalYear     Int         @map("fiscal_year")
+  name           String      @db.VarChar(160)
+  status         CycleStatus @default(DRAFT)
+  startsAt       DateTime    @map("starts_at") @db.Timestamptz(6)
+  endsAt         DateTime    @map("ends_at") @db.Timestamptz(6)
+  metadata       Json        @default("{}")
+  createdAt      DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int         @default(1)
+
+  organization      Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  goalPlans         GoalPlan[]
+  goals             Goal[]
+  governanceWindows GovernanceWindow[]
+  analyticsQuarterSnapshots AnalyticsQuarterSnapshot[]
+  kpiDefinitions    KpiDefinition[]
+
+  @@unique([organizationId, fiscalYear], map: "performance_cycles_org_fiscal_year_key")
+  @@index([organizationId, status], map: "performance_cycles_org_status_idx")
+  @@map("performance_cycles")
+}
+
+model GovernanceWindow {
+  id             String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String                 @map("organization_id") @db.Uuid
+  cycleId        String                 @map("cycle_id") @db.Uuid
+  type           GovernanceWindowType
+  quarter        Quarter                @default(NONE)
+  status         GovernanceWindowStatus @default(UPCOMING)
+  name           String                 @db.VarChar(160)
+  opensAt        DateTime               @map("opens_at") @db.Timestamptz(6)
+  closesAt       DateTime               @map("closes_at") @db.Timestamptz(6)
+  locksAt        DateTime               @map("locks_at") @db.Timestamptz(6)
+  metadata       Json                   @default("{}")
+  createdAt      DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime               @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int                    @default(1)
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  cycle          PerformanceCycle @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  checkIns       CheckIn[]
+  goalApprovals  GoalApproval[]
+  escalationLogs EscalationLog[]
+
+  @@unique([cycleId, type, quarter], map: "governance_windows_cycle_type_quarter_key")
+  @@index([organizationId, status, opensAt, closesAt], map: "governance_windows_org_status_dates_idx")
+  @@index([organizationId, type, quarter], map: "governance_windows_org_type_quarter_idx")
+  @@map("governance_windows")
+}
+
+model GoalPlan {
+  id             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String         @map("organization_id") @db.Uuid
+  cycleId        String         @map("cycle_id") @db.Uuid
+  ownerId        String         @map("owner_id") @db.Uuid
+  teamId         String?        @map("team_id") @db.Uuid
+  submittedById  String?        @map("submitted_by_id") @db.Uuid
+  approvedById   String?        @map("approved_by_id") @db.Uuid
+  status         GoalPlanStatus @default(DRAFT)
+  totalWeight    Decimal        @default(0) @map("total_weight") @db.Decimal(5, 2)
+  submittedAt    DateTime?      @map("submitted_at") @db.Timestamptz(6)
+  approvedAt     DateTime?      @map("approved_at") @db.Timestamptz(6)
+  lockedAt       DateTime?      @map("locked_at") @db.Timestamptz(6)
+  reworkReason   String?        @map("rework_reason") @db.Text
+  metadata       Json           @default("{}")
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int            @default(1)
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  cycle          PerformanceCycle @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  owner          User             @relation("GoalPlanOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  team           Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  submittedBy    User?            @relation("GoalPlanSubmitter", fields: [submittedById], references: [id], onDelete: SetNull)
+  approvedBy     User?            @relation("GoalPlanApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvals      GoalApproval[]
+  escalationLogs EscalationLog[]
+  goals          Goal[]
+
+  @@unique([organizationId, ownerId, cycleId], map: "goal_plans_org_owner_cycle_key")
+  @@index([organizationId, status, updatedAt], map: "goal_plans_org_status_updated_at_idx")
+  @@index([organizationId, cycleId, status], map: "goal_plans_org_cycle_status_idx")
+  @@index([organizationId, teamId, status], map: "goal_plans_org_team_status_idx")
+  @@map("goal_plans")
+}
+
+model Goal {
+  id                   String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId       String         @map("organization_id") @db.Uuid
+  planId               String         @map("plan_id") @db.Uuid
+  cycleId              String         @map("cycle_id") @db.Uuid
+  ownerId              String         @map("owner_id") @db.Uuid
+  teamId               String?        @map("team_id") @db.Uuid
+  parentGoalId         String?        @map("parent_goal_id") @db.Uuid
+  parentSharedGoalId   String?        @map("parent_shared_goal_id") @db.Uuid
+  kpiDefinitionId      String?        @map("kpi_definition_id") @db.Uuid
+  approvedById         String?        @map("approved_by_id") @db.Uuid
+  createdById          String?        @map("created_by_id") @db.Uuid
+  updatedById          String?        @map("updated_by_id") @db.Uuid
+  title                String         @db.VarChar(220)
+  description          String?        @db.Text
+  thrustArea           String?        @map("thrust_area") @db.VarChar(160)
+  status               GoalStatus     @default(DRAFT)
+  priority             GoalPriority   @default(MEDIUM)
+  source               GoalSource     @default(MANUAL)
+  visibility           GoalVisibility @default(TEAM)
+  kpiRole              GoalKpiRole    @default(LOCAL) @map("kpi_role")
+  uomType              UomType        @default(NUMBER) @map("uom_type")
+  scoringMethod        ScoringMethod  @map("scoring_method")
+  weightage            Decimal        @db.Decimal(5, 2)
+  baselineValue        Decimal?       @map("baseline_value") @db.Decimal(18, 4)
+  targetValue          Decimal?       @map("target_value") @db.Decimal(18, 4)
+  currentValue         Decimal?       @map("current_value") @db.Decimal(18, 4)
+  progressPercent      Decimal        @default(0) @map("progress_percent") @db.Decimal(6, 2)
+  score                Decimal?       @db.Decimal(6, 2)
+  unit                 String?        @db.VarChar(64)
+  startDate            DateTime?      @map("start_date") @db.Timestamptz(6)
+  dueDate              DateTime?      @map("due_date") @db.Timestamptz(6)
+  lockDate             DateTime?      @map("lock_date") @db.Timestamptz(6)
+  isSharedMaster       Boolean        @default(false) @map("is_shared_master")
+  isInheritedTarget    Boolean        @default(false) @map("is_inherited_target")
+  isTargetEditable     Boolean        @default(true) @map("is_target_editable")
+  approvalTimestamp    DateTime?      @map("approval_timestamp") @db.Timestamptz(6)
+  kpiDefinitionVersion Int?           @map("kpi_definition_version")
+  lastSyncedAt         DateTime?      @map("last_synced_at") @db.Timestamptz(6)
+  metadata             Json           @default("{}")
+  createdAt            DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version              Int            @default(1)
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  plan             GoalPlan         @relation(fields: [planId], references: [id], onDelete: Cascade)
+  cycle            PerformanceCycle @relation(fields: [cycleId], references: [id], onDelete: Restrict)
+  owner            User             @relation("GoalOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  team             Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  parentGoal       Goal?            @relation("GoalHierarchy", fields: [parentGoalId], references: [id], onDelete: SetNull)
+  childGoals       Goal[]           @relation("GoalHierarchy")
+  parentSharedGoal Goal?            @relation("SharedGoalPropagation", fields: [parentSharedGoalId], references: [id], onDelete: SetNull)
+  childSharedGoals Goal[]           @relation("SharedGoalPropagation")
+  kpiDefinition    KpiDefinition?   @relation(fields: [kpiDefinitionId], references: [id], onDelete: SetNull)
+  approvedBy       User?            @relation("GoalApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  createdBy        User?            @relation("GoalCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy        User?            @relation("GoalUpdater", fields: [updatedById], references: [id], onDelete: SetNull)
+  activities       ActivityFeed[]
+  checkIns         CheckIn[]
+  comments         GoalComment[]
+  sourceSyncLogs   KpiSyncLog[]     @relation("KpiSyncSourceGoal")
+  targetSyncLogs   KpiSyncLog[]     @relation("KpiSyncTargetGoal")
+
+  @@index([organizationId, ownerId, cycleId, status], map: "goals_org_owner_cycle_status_idx")
+  @@index([organizationId, teamId, cycleId, status], map: "goals_org_team_cycle_status_idx")
+  @@index([organizationId, planId, status], map: "goals_org_plan_status_idx")
+  @@index([organizationId, priority, dueDate], map: "goals_org_priority_due_date_idx")
+  @@index([organizationId, kpiDefinitionId, kpiDefinitionVersion], map: "goals_org_kpi_version_idx")
+  @@index([organizationId, isSharedMaster, status], map: "goals_org_shared_master_status_idx")
+  @@index([organizationId, parentSharedGoalId], map: "goals_org_parent_shared_goal_idx")
+  @@index([organizationId, parentGoalId], map: "goals_org_parent_goal_idx")
+  @@map("goals")
+}
+
+model KpiDefinition {
+  id             String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String        @map("organization_id") @db.Uuid
+  cycleId        String?       @map("cycle_id") @db.Uuid
+  ownerId        String        @map("owner_id") @db.Uuid
+  teamId         String?       @map("team_id") @db.Uuid
+  parentKpiId    String?       @map("parent_kpi_id") @db.Uuid
+  code           String        @db.VarChar(80)
+  name           String        @db.VarChar(220)
+  description    String?       @db.Text
+  status         KpiStatus     @default(DRAFT)
+  scoringMethod  ScoringMethod @map("scoring_method")
+  unit           String?       @db.VarChar(64)
+  baselineValue  Decimal?      @map("baseline_value") @db.Decimal(18, 4)
+  targetValue    Decimal?      @map("target_value") @db.Decimal(18, 4)
+  targetDate     DateTime?     @map("target_date") @db.Timestamptz(6)
+  currentVersion Int           @default(1) @map("current_version")
+  metadata       Json          @default("{}")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version        Int           @default(1)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  cycle        PerformanceCycle? @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  owner        User              @relation("KpiDefinitionOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  team         Team?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  parentKpi    KpiDefinition?    @relation("KpiHierarchy", fields: [parentKpiId], references: [id], onDelete: SetNull)
+  childKpis    KpiDefinition[]   @relation("KpiHierarchy")
+  assignments  KpiAssignment[]
+  goals        Goal[]
+  syncLogs     KpiSyncLog[]
+
+  @@unique([organizationId, code], map: "kpi_definitions_org_code_key")
+  @@index([organizationId, ownerId, status], map: "kpi_definitions_org_owner_status_idx")
+  @@index([organizationId, teamId, status], map: "kpi_definitions_org_team_status_idx")
+  @@index([organizationId, parentKpiId], map: "kpi_definitions_org_parent_kpi_idx")
+  @@index([organizationId, cycleId, status], map: "kpi_definitions_org_cycle_status_idx")
+  @@map("kpi_definitions")
+}
+
+model KpiAssignment {
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId   String      @map("organization_id") @db.Uuid
+  kpiDefinitionId  String      @map("kpi_definition_id") @db.Uuid
+  assignedToUserId String?     @map("assigned_to_user_id") @db.Uuid
+  assignedToTeamId String?     @map("assigned_to_team_id") @db.Uuid
+  assignedById     String      @map("assigned_by_id") @db.Uuid
+  role             GoalKpiRole @default(REPLICA)
+  localWeight      Decimal?    @map("local_weight") @db.Decimal(5, 2)
+  effectiveFrom    DateTime    @default(now()) @map("effective_from") @db.Timestamptz(6)
+  effectiveTo      DateTime?   @map("effective_to") @db.Timestamptz(6)
+  metadata         Json        @default("{}")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime    @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version          Int         @default(1)
+
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  kpiDefinition  KpiDefinition @relation(fields: [kpiDefinitionId], references: [id], onDelete: Cascade)
+  assignedToUser User?         @relation("KpiAssignmentAssignee", fields: [assignedToUserId], references: [id], onDelete: Cascade)
+  assignedToTeam Team?         @relation("KpiAssignmentTeam", fields: [assignedToTeamId], references: [id], onDelete: Cascade)
+  assignedBy     User          @relation("KpiAssignmentCreator", fields: [assignedById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, kpiDefinitionId, effectiveTo], map: "kpi_assignments_org_kpi_effective_to_idx")
+  @@index([organizationId, assignedToUserId, effectiveTo], map: "kpi_assignments_org_user_effective_to_idx")
+  @@index([organizationId, assignedToTeamId, effectiveTo], map: "kpi_assignments_org_team_effective_to_idx")
+  @@map("kpi_assignments")
+}
+
+model KpiSyncLog {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String        @map("organization_id") @db.Uuid
+  kpiDefinitionId String        @map("kpi_definition_id") @db.Uuid
+  sourceGoalId    String?       @map("source_goal_id") @db.Uuid
+  targetGoalId    String?       @map("target_goal_id") @db.Uuid
+  fromVersion     Int           @map("from_version")
+  toVersion       Int           @map("to_version")
+  status          KpiSyncStatus @default(PENDING)
+  changes         Json          @default("{}")
+  errorMessage    String?       @map("error_message") @db.Text
+  syncedAt        DateTime?     @map("synced_at") @db.Timestamptz(6)
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  kpiDefinition KpiDefinition @relation(fields: [kpiDefinitionId], references: [id], onDelete: Cascade)
+  sourceGoal    Goal?         @relation("KpiSyncSourceGoal", fields: [sourceGoalId], references: [id], onDelete: SetNull)
+  targetGoal    Goal?         @relation("KpiSyncTargetGoal", fields: [targetGoalId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, kpiDefinitionId, status], map: "kpi_sync_logs_org_kpi_status_idx")
+  @@index([organizationId, targetGoalId, createdAt], map: "kpi_sync_logs_org_target_created_at_idx")
+  @@map("kpi_sync_logs")
+}
+
+model CheckIn {
+  id                 String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String         @map("organization_id") @db.Uuid
+  goalId             String         @map("goal_id") @db.Uuid
+  governanceWindowId String         @map("governance_window_id") @db.Uuid
+  submittedById      String         @map("submitted_by_id") @db.Uuid
+  reviewerId         String?        @map("reviewer_id") @db.Uuid
+  quarter            Quarter
+  status             CheckInStatus  @default(DRAFT)
+  actualAchievement  Decimal?       @map("actual_achievement") @db.Decimal(18, 4)
+  progressScore      Decimal        @default(0) @map("progress_score") @db.Decimal(6, 2)
+  progressStatus     ProgressStatus @default(NOT_STARTED) @map("progress_status")
+  score              Decimal?       @db.Decimal(6, 2)
+  confidence         Decimal?       @db.Decimal(5, 2)
+  managerComment     String?        @map("manager_comment") @db.Text
+  blockers           String?        @db.Text
+  riskSignal         String?        @map("risk_signal") @db.VarChar(120)
+  submittedAt        DateTime?      @map("submitted_at") @db.Timestamptz(6)
+  reviewedAt         DateTime?      @map("reviewed_at") @db.Timestamptz(6)
+  lockedAt           DateTime?      @map("locked_at") @db.Timestamptz(6)
+  metadata           Json           @default("{}")
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version            Int            @default(1)
+
+  organization     Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  goal             Goal             @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  governanceWindow GovernanceWindow @relation(fields: [governanceWindowId], references: [id], onDelete: Restrict)
+  submittedBy      User             @relation("CheckInSubmitter", fields: [submittedById], references: [id], onDelete: Restrict)
+  reviewer         User?            @relation("CheckInReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  escalationLogs   EscalationLog[]
+
+  @@unique([organizationId, goalId, governanceWindowId], map: "check_ins_org_goal_window_key")
+  @@index([organizationId, goalId, quarter], map: "check_ins_org_goal_quarter_idx")
+  @@index([organizationId, quarter, progressStatus], map: "check_ins_org_quarter_progress_status_idx")
+  @@index([organizationId, submittedById, status], map: "check_ins_org_submitter_status_idx")
+  @@index([organizationId, reviewerId, status], map: "check_ins_org_reviewer_status_idx")
+  @@index([organizationId, governanceWindowId, status], map: "check_ins_org_window_status_idx")
+  @@map("check_ins")
+}
+
+model GoalComment {
+  id              String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String         @map("organization_id") @db.Uuid
+  goalId          String         @map("goal_id") @db.Uuid
+  authorId        String         @map("author_id") @db.Uuid
+  parentCommentId String?        @map("parent_comment_id") @db.Uuid
+  threadRootId    String?        @map("thread_root_id") @db.Uuid
+  depth           Int            @default(0)
+  body            String         @db.Text
+  visibility      GoalVisibility @default(MANAGER)
+  metadata        Json           @default("{}")
+  deletedAt       DateTime?      @map("deleted_at") @db.Timestamptz(6)
+  createdAt       DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime       @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version         Int            @default(1)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  goal          Goal           @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parentComment GoalComment?   @relation("GoalCommentThread", fields: [parentCommentId], references: [id], onDelete: SetNull)
+  replies       GoalComment[]  @relation("GoalCommentThread")
+  threadRoot    GoalComment?   @relation("GoalCommentRoot", fields: [threadRootId], references: [id], onDelete: SetNull)
+  threadReplies GoalComment[]  @relation("GoalCommentRoot")
+  activities    ActivityFeed[]
+
+  @@index([organizationId, goalId, createdAt], map: "goal_comments_org_goal_created_at_idx")
+  @@index([organizationId, authorId, createdAt], map: "goal_comments_org_author_created_at_idx")
+  @@index([organizationId, parentCommentId, createdAt], map: "goal_comments_org_parent_created_at_idx")
+  @@index([organizationId, threadRootId, createdAt], map: "goal_comments_org_thread_created_at_idx")
+  @@map("goal_comments")
+}
+
+model GoalApproval {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String            @map("organization_id") @db.Uuid
+  goalPlanId          String            @map("goal_plan_id") @db.Uuid
+  governanceWindowId  String?           @map("governance_window_id") @db.Uuid
+  requesterId         String            @map("requester_id") @db.Uuid
+  subjectUserId       String            @map("subject_user_id") @db.Uuid
+  approverId          String            @map("approver_id") @db.Uuid
+  decidedById         String?           @map("decided_by_id") @db.Uuid
+  status              ApprovalStatus    @default(PENDING)
+  decision            ApprovalDecision?
+  requestedAt         DateTime          @default(now()) @map("requested_at") @db.Timestamptz(6)
+  dueAt               DateTime?         @map("due_at") @db.Timestamptz(6)
+  decidedAt           DateTime?         @map("decided_at") @db.Timestamptz(6)
+  comment             String?           @db.Text
+  adaptiveCardPayload Json?             @map("adaptive_card_payload")
+  metadata            Json              @default("{}")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version             Int               @default(1)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  goalPlan         GoalPlan          @relation(fields: [goalPlanId], references: [id], onDelete: Cascade)
+  governanceWindow GovernanceWindow? @relation(fields: [governanceWindowId], references: [id], onDelete: SetNull)
+  requester        User              @relation("GoalApprovalRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  subjectUser      User              @relation("GoalApprovalSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  approver         User              @relation("GoalApprovalApprover", fields: [approverId], references: [id], onDelete: Restrict)
+  decidedBy        User?             @relation("GoalApprovalDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, approverId, status], map: "goal_approvals_org_approver_status_idx")
+  @@index([organizationId, subjectUserId, status], map: "goal_approvals_org_subject_status_idx")
+  @@index([organizationId, goalPlanId, status], map: "goal_approvals_org_plan_status_idx")
+  @@map("goal_approvals")
+}
+
+model ActivityFeed {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId  String       @map("organization_id") @db.Uuid
+  actorId         String?      @map("actor_id") @db.Uuid
+  teamId          String?      @map("team_id") @db.Uuid
+  goalId          String?      @map("goal_id") @db.Uuid
+  goalCommentId   String?      @map("goal_comment_id") @db.Uuid
+  escalationLogId String?      @map("escalation_log_id") @db.Uuid
+  type            ActivityType
+  entityType      String       @map("entity_type") @db.VarChar(80)
+  entityId        String       @map("entity_id") @db.Uuid
+  summary         String       @db.VarChar(280)
+  metadata        Json         @default("{}")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization  Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor         User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  team          Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  goal          Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  goalComment   GoalComment?   @relation(fields: [goalCommentId], references: [id], onDelete: SetNull)
+  escalationLog EscalationLog? @relation(fields: [escalationLogId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt], map: "activity_feed_org_created_at_idx")
+  @@index([organizationId, teamId, createdAt], map: "activity_feed_org_team_created_at_idx")
+  @@index([organizationId, goalId, createdAt], map: "activity_feed_org_goal_created_at_idx")
+  @@index([organizationId, entityType, entityId], map: "activity_feed_org_entity_idx")
+  @@map("activity_feed")
+}
+
+model Notification {
+  id             String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId String               @map("organization_id") @db.Uuid
+  recipientId    String               @map("recipient_id") @db.Uuid
+  type           NotificationType
+  priority       NotificationPriority @default(NORMAL)
+  title          String               @db.VarChar(180)
+  message        String               @db.Text
+  actionUrl      String?              @map("action_url") @db.Text
+  isRead         Boolean              @default(false) @map("is_read")
+  metadata       Json                 @default("{}")
+  readAt         DateTime?            @map("read_at") @db.Timestamptz(6)
+  expiresAt      DateTime?            @map("expires_at") @db.Timestamptz(6)
+  createdAt      DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  recipient    User         @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, recipientId, isRead, createdAt], map: "notifications_org_recipient_read_created_idx")
+  @@index([organizationId, type, createdAt], map: "notifications_org_type_created_at_idx")
+  @@map("notifications")
+}
+
+model EscalationLog {
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId     String           @map("organization_id") @db.Uuid
+  subjectUserId      String           @map("subject_user_id") @db.Uuid
+  assignedToUserId   String?          @map("assigned_to_user_id") @db.Uuid
+  goalPlanId         String?          @map("goal_plan_id") @db.Uuid
+  checkInId          String?          @map("check_in_id") @db.Uuid
+  governanceWindowId String?          @map("governance_window_id") @db.Uuid
+  level              EscalationLevel
+  status             EscalationStatus @default(OPEN)
+  reason             String           @db.Text
+  overdueDays        Int              @default(0) @map("overdue_days")
+  dueAt              DateTime?        @map("due_at") @db.Timestamptz(6)
+  escalatedAt        DateTime         @default(now()) @map("escalated_at") @db.Timestamptz(6)
+  acknowledgedAt     DateTime?        @map("acknowledged_at") @db.Timestamptz(6)
+  resolvedAt         DateTime?        @map("resolved_at") @db.Timestamptz(6)
+  metadata           Json             @default("{}")
+  createdAt          DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime         @updatedAt @map("updated_at") @db.Timestamptz(6)
+  version            Int              @default(1)
+
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  subjectUser      User              @relation("EscalationSubject", fields: [subjectUserId], references: [id], onDelete: Restrict)
+  assignedToUser   User?             @relation("EscalationAssignee", fields: [assignedToUserId], references: [id], onDelete: SetNull)
+  goalPlan         GoalPlan?         @relation(fields: [goalPlanId], references: [id], onDelete: SetNull)
+  checkIn          CheckIn?          @relation(fields: [checkInId], references: [id], onDelete: SetNull)
+  governanceWindow GovernanceWindow? @relation(fields: [governanceWindowId], references: [id], onDelete: SetNull)
+  activities       ActivityFeed[]
+
+  @@index([organizationId, status, level, escalatedAt], map: "escalation_logs_org_status_level_escalated_idx")
+  @@index([organizationId, subjectUserId, status], map: "escalation_logs_org_subject_status_idx")
+  @@index([organizationId, assignedToUserId, status], map: "escalation_logs_org_assignee_status_idx")
+  @@map("escalation_logs")
+}
+
+model AuditLog {
+  id                     String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auditSequence          BigInt      @unique(map: "audit_logs_audit_sequence_key") @default(autoincrement()) @map("audit_sequence") @db.BigInt
+  transactionId          BigInt      @default(dbgenerated("txid_current()")) @map("transaction_id") @db.BigInt
+  organizationId         String      @map("organization_id") @db.Uuid
+  changedById            String?     @map("changed_by_id") @db.Uuid
+  action                 AuditAction
+  entityType             String      @map("entity_type") @db.VarChar(80)
+  entityId               String      @map("entity_id") @db.Uuid
+  oldData                Json?       @map("old_data")
+  newData                Json?       @map("new_data")
+  requestId              String?     @map("request_id") @db.VarChar(128)
+  traceId                String?     @map("trace_id") @db.VarChar(128)
+  ipAddress              String?     @map("ip_address") @db.VarChar(64)
+  userAgent              String?     @map("user_agent") @db.Text
+  isSystemGenerated      Boolean     @default(false) @map("is_system_generated")
+  isLockedRecordMutation Boolean     @default(false) @map("is_locked_record_mutation")
+  metadata               Json        @default("{}")
+  createdAt              DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  changedBy    User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, entityType, entityId, createdAt], map: "audit_logs_org_entity_created_at_idx")
+  @@index([organizationId, entityType, entityId, auditSequence], map: "audit_logs_org_entity_sequence_idx")
+  @@index([organizationId, transactionId, auditSequence], map: "audit_logs_org_transaction_sequence_idx")
+  @@index([organizationId, changedById, createdAt], map: "audit_logs_org_changed_by_created_at_idx")
+  @@index([organizationId, action, createdAt], map: "audit_logs_org_action_created_at_idx")
+  @@index([oldData(ops: JsonbPathOps)], type: Gin, map: "audit_logs_old_data_gin_idx")
+  @@index([newData(ops: JsonbPathOps)], type: Gin, map: "audit_logs_new_data_gin_idx")
+  @@index([metadata(ops: JsonbPathOps)], type: Gin, map: "audit_logs_metadata_gin_idx")
+  @@map("audit_logs")
+}
+
+model AnalyticsQuarterSnapshot {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId        String   @map("organization_id") @db.Uuid
+  cycleId               String?  @map("cycle_id") @db.Uuid
+  quarter               Quarter
+  subjectUserId         String?  @map("subject_user_id") @db.Uuid
+  teamId                String?  @map("team_id") @db.Uuid
+  department            String   @default("Unassigned") @db.VarChar(160)
+  employeeCount         Int      @default(0) @map("employee_count")
+  goalCount             Int      @default(0) @map("goal_count")
+  averageProgress       Decimal  @default(0) @map("average_progress") @db.Decimal(6, 2)
+  approvedPlans         Int      @default(0) @map("approved_plans")
+  submittedPlans        Int      @default(0) @map("submitted_plans")
+  returnedPlans         Int      @default(0) @map("returned_plans")
+  draftPlans            Int      @default(0) @map("draft_plans")
+  activePlans           Int      @default(0) @map("active_plans")
+  lockedPlans           Int      @default(0) @map("locked_plans")
+  checkInTotal          Int      @default(0) @map("check_in_total")
+  checkInCompliant      Int      @default(0) @map("check_in_compliant")
+  checkInComplianceRate Decimal  @default(0) @map("check_in_compliance_rate") @db.Decimal(6, 2)
+  approvalTotal         Int      @default(0) @map("approval_total")
+  approvalDecided       Int      @default(0) @map("approval_decided")
+  approvalTurnaroundHrs Decimal  @default(0) @map("approval_turnaround_hrs") @db.Decimal(10, 2)
+  escalationCount       Int      @default(0) @map("escalation_count")
+  openEscalations       Int      @default(0) @map("open_escalations")
+  syncSynced            Int      @default(0) @map("sync_synced")
+  syncPending           Int      @default(0) @map("sync_pending")
+  syncFailed            Int      @default(0) @map("sync_failed")
+  syncSkipped           Int      @default(0) @map("sync_skipped")
+  productivityScore     Decimal  @default(0) @map("productivity_score") @db.Decimal(6, 2)
+  generatedAt           DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  cycle        PerformanceCycle? @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  subjectUser  User?             @relation(fields: [subjectUserId], references: [id], onDelete: Cascade)
+  team         Team?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, cycleId, quarter, generatedAt], map: "analytics_quarter_snapshots_org_cycle_quarter_generated_idx")
+  @@index([organizationId, subjectUserId, cycleId, quarter], map: "analytics_quarter_snapshots_org_subject_cycle_quarter_idx")
+  @@index([organizationId, teamId, cycleId, quarter], map: "analytics_quarter_snapshots_org_team_cycle_quarter_idx")
+  @@index([organizationId, department, cycleId, quarter], map: "analytics_quarter_snapshots_org_department_cycle_quarter_idx")
+  @@map("analytics_quarter_snapshots")
+}
+
+model AnalyticsDailySnapshot {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  organizationId      String   @map("organization_id") @db.Uuid
+  teamId              String?  @map("team_id") @db.Uuid
+  capturedOn          DateTime @map("captured_on") @db.Date
+  activityCount       Int      @default(0) @map("activity_count")
+  overdueApprovals    Int      @default(0) @map("overdue_approvals")
+  pendingApprovals    Int      @default(0) @map("pending_approvals")
+  openEscalations     Int      @default(0) @map("open_escalations")
+  criticalEscalations Int      @default(0) @map("critical_escalations")
+  governanceAlerts    Int      @default(0) @map("governance_alerts")
+  submittedPlans      Int      @default(0) @map("submitted_plans")
+  approvedPlans       Int      @default(0) @map("approved_plans")
+  returnedPlans       Int      @default(0) @map("returned_plans")
+  checkInsSubmitted   Int      @default(0) @map("check_ins_submitted")
+  syncFailures        Int      @default(0) @map("sync_failures")
+  throughputScore     Decimal  @default(0) @map("throughput_score") @db.Decimal(6, 2)
+  generatedAt         DateTime @default(now()) @map("generated_at") @db.Timestamptz(6)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  team         Team?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, capturedOn, generatedAt], map: "analytics_daily_snapshots_org_day_generated_idx")
+  @@index([organizationId, teamId, capturedOn], map: "analytics_daily_snapshots_org_team_day_idx")
+  @@map("analytics_daily_snapshots")
+}
