@@ -1,6 +1,7 @@
 import "server-only";
 
-import { auth } from "@/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { AuthenticationError, AuthorizationError } from "./errors";
 import { hasPermission, type Permission } from "./permissions";
 import { roleAtLeast, type EnterpriseRole } from "./roles";
@@ -16,8 +17,8 @@ export interface AuthenticatedPrincipal {
 }
 
 export async function requireSession(): Promise<AuthenticatedPrincipal> {
-  const session = await auth();
-  const user = session?.user;
+  const session = await getServerSession(authOptions);
+  const user = session?.user as any;
 
   if (!user?.id || !user.organizationId || !user.role) {
     throw new AuthenticationError();

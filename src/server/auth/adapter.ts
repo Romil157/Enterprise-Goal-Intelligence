@@ -120,7 +120,7 @@ function toAdapterAccount(account: {
 
 export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
   return {
-    async createUser(user) {
+    async createUser(user: any) {
       const email = normalizeEmail(user.email);
       const organization = await resolveAdapterOrganization(prisma, email);
       const existingUser = await prisma.user.findUnique({
@@ -154,12 +154,12 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return toAdapterUser(created);
     },
 
-    async getUser(id) {
+    async getUser(id: any) {
       const user = await prisma.user.findUnique({ where: { id } });
       return user ? toAdapterUser(user) : null;
     },
 
-    async getUserByEmail(email) {
+    async getUserByEmail(email: any) {
       const user = await prisma.user.findFirst({
         where: {
           emailNormalized: normalizeEmail(email),
@@ -172,7 +172,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return user ? toAdapterUser(user) : null;
     },
 
-    async getUserByAccount(providerAccountId) {
+    async getUserByAccount(providerAccountId: any) {
       const account = await prisma.account.findUnique({
         where: {
           provider_providerAccountId: {
@@ -186,7 +186,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return account?.user ? toAdapterUser(account.user) : null;
     },
 
-    async updateUser(user) {
+    async updateUser(user: any) {
       const updated = await prisma.user.update({
         where: { id: user.id },
         data: {
@@ -202,7 +202,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return toAdapterUser(updated);
     },
 
-    async deleteUser(userId) {
+    async deleteUser(userId: any) {
       const deleted = await prisma.user.update({
         where: { id: userId },
         data: {
@@ -215,7 +215,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return toAdapterUser(deleted);
     },
 
-    async linkAccount(account) {
+    async linkAccount(account: any) {
       const linked = await prisma.account.upsert({
         where: {
           provider_providerAccountId: {
@@ -230,7 +230,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return toAdapterAccount(linked);
     },
 
-    async unlinkAccount(providerAccountId) {
+    async unlinkAccount(providerAccountId: any) {
       const deleted = await prisma.account.delete({
         where: {
           provider_providerAccountId: {
@@ -243,7 +243,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return toAdapterAccount(deleted);
     },
 
-    async createSession(session) {
+    async createSession(session: any) {
       const created = await prisma.session.create({
         data: {
           sessionToken: session.sessionToken,
@@ -255,7 +255,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return created as AdapterSession;
     },
 
-    async getSessionAndUser(sessionToken) {
+    async getSessionAndUser(sessionToken: any) {
       const session = await prisma.session.findUnique({
         where: { sessionToken },
         include: { user: true }
@@ -273,7 +273,7 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       };
     },
 
-    async updateSession(session) {
+    async updateSession(session: any) {
       const updated = await prisma.session.update({
         where: { sessionToken: session.sessionToken },
         data: {
@@ -285,16 +285,16 @@ export function AtomquestPrismaAdapter(prisma: PrismaClient): Adapter {
       return updated as AdapterSession;
     },
 
-    async deleteSession(sessionToken) {
+    async deleteSession(sessionToken: any) {
       const deleted = await prisma.session.delete({ where: { sessionToken } });
       return deleted as AdapterSession;
     },
 
-    async createVerificationToken(verificationToken) {
+    async createVerificationToken(verificationToken: any) {
       return prisma.verificationToken.create({ data: verificationToken }) as Promise<VerificationToken>;
     },
 
-    async useVerificationToken(identifierToken) {
+    async useVerificationToken(identifierToken: any) {
       try {
         return (await prisma.verificationToken.delete({
           where: {

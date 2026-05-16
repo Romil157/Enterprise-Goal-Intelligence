@@ -11,7 +11,7 @@ export function SignInButton({ callbackUrl }: { callbackUrl: string }) {
   const handleSignIn = async () => {
     setIsLoading(true);
     // Use the client-side signIn method which reliably triggers OAuth redirects in the browser.
-    await signIn("microsoft-entra-id", { callbackUrl });
+    await signIn("azure-ad", { callbackUrl });
     // Note: We don't set isLoading to false here because the page will redirect.
   };
 

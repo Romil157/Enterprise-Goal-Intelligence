@@ -25,13 +25,14 @@ export function tokenHasClaims(token: JWT): token is AtomquestToken & AtomquestC
 export function applyTokenToSession(session: DefaultSession, token: JWT): DefaultSession {
   if (!session.user || !tokenHasClaims(token)) return session;
 
-  session.user.id = token.id;
-  session.user.organizationId = token.organizationId;
-  session.user.role = normalizeRole(token.role);
-  session.user.teamId = token.teamId ?? null;
-  session.user.managerId = token.managerId ?? null;
-  session.user.entraObjectId = token.entraObjectId ?? null;
-  session.user.tenantId = token.tenantId ?? null;
+  const user = session.user as any;
+  user.id = token.id;
+  user.organizationId = token.organizationId;
+  user.role = normalizeRole(token.role);
+  user.teamId = token.teamId ?? null;
+  user.managerId = token.managerId ?? null;
+  user.entraObjectId = token.entraObjectId ?? null;
+  user.tenantId = token.tenantId ?? null;
 
   return session;
 }
