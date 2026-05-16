@@ -20,7 +20,6 @@ export function SignInButton({ callbackUrl }: { callbackUrl: string }) {
       onClick={handleSignIn} 
       disabled={isLoading}
       className="w-full flex items-center justify-center gap-2 py-6 text-base font-medium"
-      size="lg"
     >
       {isLoading ? (
         <Loader2 className="h-5 w-5 animate-spin" />
